@@ -1,28 +1,34 @@
 import { Injectable, NotFoundException, Inject } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import {Client} from 'pg';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+import {Client} from 'pg';
 
 import { User } from '../entities/user.entity';
-import { Order } from '../entities/order.entity';
-import { Product } from './../../products/entities/product.entity';
 import { CreateUserDto, UpdateUserDto } from '../dtos/user.dto';
 
 import { ProductsService } from './../../products/services/products.service';
+import { CustomersService } from './customers.service';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectRepository(User) private userRepo: Repository<User>,
-    @InjectRepository(Product) private productRepo: Repository<Product>,
-    //private productsService: ProductsService,
+    private productsService: ProductsService,
     private configService: ConfigService,
+
     @Inject('PG') private clientPg: Client,
+    @InjectRepository(User) private userRepo: Repository<User>,
+    //@InjectRepository(Product) private productRepo: Repository<Product>,
+    private customersService: CustomersService,
   ) {}
 
   findAll() {
-    return this.userRepo.find();
+    const apiKey = this.configService.get('API_KEY');
+    const dbName = this.configService.get('DATABASE_NAME');
+    console.log(apiKey, dbName);
+    return this.userRepo.find({
+      relations: ['customer'],
+    });
   }
 
   async findOne(id: number) {
@@ -35,8 +41,12 @@ export class UsersService {
     return user;
   }
 
-  create(data: CreateUserDto) {
+  async create(data: CreateUserDto) {
     const newUser = this.userRepo.create(data);
+    if(data.customerId){
+      const customer = await this.customersService.findOne(data.customerId);
+      newUser.customer = customer;
+    }
     return this.userRepo.save(newUser);
   }
 
@@ -66,7 +76,7 @@ export class UsersService {
     return {
       date: new Date(),
       user,
-      products: await this.productRepo.find(),
+      products: await this.productsService.findAll(),
     };
   }
 
