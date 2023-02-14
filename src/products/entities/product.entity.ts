@@ -1,8 +1,16 @@
-import { PrimaryGeneratedColumn, Column, Entity, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  PrimaryGeneratedColumn,
+  Column,
+  Entity,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+} from 'typeorm';
+
+import { Brand } from './brand.entity';
 
 @Entity()
 export class Product {
-
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -23,14 +31,16 @@ export class Product {
 
   @CreateDateColumn({
     type: 'timestamptz',
-    default: ()=> 'CURRENT_TIMESTAMP',
+    default: () => 'CURRENT_TIMESTAMP',
   })
   createdAt: Date;
 
   @UpdateDateColumn({
     type: 'timestamptz',
-    default: ()=> 'CURRENT_TIMESTAMP',
+    default: () => 'CURRENT_TIMESTAMP',
   })
   updatedAt: Date;
 
+  @ManyToOne(()=>Brand, (brand)=> brand.products)
+  brand:Brand;
 }
