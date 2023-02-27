@@ -5,7 +5,11 @@ import { Repository } from 'typeorm';
 import { Product } from './../entities/product.entity';
 import { Category } from '../entities/category.entity';
 import { Brand } from '../entities/brand.entity';
-import { CreateProductDto, UpdateProductDto } from './../dtos/products.dtos';
+import {
+  CreateProductDto,
+  UpdateProductDto,
+  FilterProductsDto,
+} from './../dtos/products.dtos';
 
 @Injectable()
 export class ProductsService {
@@ -15,7 +19,15 @@ export class ProductsService {
     @InjectRepository(Category) private categoryRepo: Repository<Category>,
   ) {}
 
-  findAll() {
+  findAll(params?: FilterProductsDto) {
+    if(params){
+      const {limit, offset} = params;
+      return this.productRepo.find({
+        relations: ['brand'],
+        take: limit,
+        skip: offset,
+      });
+    }
     return this.productRepo.find({
       relations: ['brand'],
     });
@@ -71,9 +83,9 @@ export class ProductsService {
     return this.productRepo.save(product);
   }
 
-  async removeCategorybyProduct(productId: number, categoryId: number){
-    const product = await this.productRepo.findOne(productId,{
-      relations:['categories'],
+  async removeCategorybyProduct(productId: number, categoryId: number) {
+    const product = await this.productRepo.findOne(productId, {
+      relations: ['categories'],
     });
     product.categories = product.categories.filter(
       (item) => item.id !== categoryId,
@@ -81,9 +93,9 @@ export class ProductsService {
     return this.productRepo.save(product);
   }
 
-  async addCategoryToProduct(productId: number, categoryId: number){
-    const product = await this.productRepo.findOne(productId,{
-      relations:['categories'],
+  async addCategoryToProduct(productId: number, categoryId: number) {
+    const product = await this.productRepo.findOne(productId, {
+      relations: ['categories'],
     });
     const category = await this.categoryRepo.findOne(categoryId);
     product.categories.push(category);
